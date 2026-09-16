@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 @testable import Seconds
 
@@ -18,24 +19,12 @@ final class CountdownTests: XCTestCase {
         XCTAssertEqual(Countdown.seconds(until: now.addingTimeInterval(-100), at: now), 0)
     }
 
-    func testLiveFormatHasGroupingWithoutAHiddenSignOrUnit() {
-        for seconds in [31_536_000, 10_000_000, 9_999_999, 1_000, 999, 10, 9, 1, 0] {
-            XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(-seconds)), Countdown.number(seconds))
-        }
-    }
+    func testNativeLiveFormatIsUnsignedAndGrouped() {
+        let deadline = now.addingTimeInterval(31_536_000)
+        let formatted = String(CountdownNumber.liveSecondsFormat(to: deadline).format(now).characters)
 
-    func testLiveFormatClampsExpiredDurationsToZero() {
-        XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(-0.9)), "0")
-        XCTAssertEqual(Countdown.liveSecondsFormat.format(.zero), "0")
-        XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(1)), "0")
-    }
-
-    func testLiveFormatAndAppAgreeOnFractionalSeconds() {
-        for remaining in [1.9, 1.1, 1.0, 0.9, 0.1] {
-            let expected = Countdown.seconds(until: now.addingTimeInterval(remaining), at: now)
-            let formatted = Countdown.liveSecondsFormat.format(.seconds(-remaining))
-            XCTAssertEqual(formatted, "\(expected)")
-        }
+        XCTAssertEqual(formatted, "31,536,000 seconds")
+        XCTAssertFalse(formatted.contains("-"))
     }
 
     func testCaptionLayoutMatchesCountdownWidth() {

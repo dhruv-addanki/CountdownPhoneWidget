@@ -82,6 +82,9 @@ struct CountdownEditor: View {
             .padding(.horizontal, 28)
             .navigationTitle("Seconds")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                WidgetCenter.shared.reloadTimelines(ofKind: Countdown.widgetKind)
+            }
             .onChange(of: draftDeadline) { _, _ in justSaved = false }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active && !hasChanges {

@@ -1,9 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// Keeps Apple's live duration text intact so the system owns the ticking.
-/// The formatter emits only the positive seconds number. The active caption
-/// is fitted to that measured width.
+/// Uses WidgetKit's built-in unsigned date-offset formatter so the system owns
+/// ticking. Its trailing unit is clipped; the active caption fits the number.
 struct CountdownNumber: View {
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
@@ -41,8 +40,8 @@ struct CountdownNumber: View {
                         // Never present that coarser value as a seconds count.
                         Text("—")
                     } else {
-                        Text(.durationOffset(to: deadline), format: Countdown.liveSecondsFormat)
-                            .lineLimit(1)
+                        Text(.currentDate, format: Self.liveSecondsFormat(to: deadline))
+                            .fixedSize(horizontal: true, vertical: false)
                             .frame(width: numberWidth, alignment: .leading)
                             .clipped()
                     }
@@ -87,6 +86,17 @@ struct CountdownNumber: View {
 
     static func numberFont(size: CGFloat) -> UIFont {
         UIFont.monospacedSystemFont(ofSize: size, weight: .medium)
+    }
+
+    /// Apple's Codable formatter is safe for the widget extension. It updates
+    /// each second and starts with an unsigned, grouped seconds value.
+    static func liveSecondsFormat(to deadline: Date) -> SystemFormatStyle.DateOffset {
+        SystemFormatStyle.DateOffset(
+            to: deadline,
+            allowedFields: [.second],
+            maxFieldCount: 1,
+            sign: .never
+        ).locale(Countdown.locale)
     }
 
     static func captionFont(size: CGFloat) -> UIFont {
