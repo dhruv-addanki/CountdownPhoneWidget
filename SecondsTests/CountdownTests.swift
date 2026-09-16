@@ -41,6 +41,34 @@ final class CountdownTests: XCTestCase {
         }
     }
 
+    func testCaptionTrackingMatchesCountdownWidth() {
+        let numberFont = CountdownNumber.uiFont(size: 18)
+        let captionFont = CountdownNumber.uiFont(size: 9)
+        let numberWidth = CountdownNumber.width(of: "31,410,180", font: numberFont)
+        let caption = "Inspiration is Fleeting"
+        let tracking = CountdownNumber.tracking(for: caption, font: captionFont, targetWidth: numberWidth)
+
+        XCTAssertEqual(
+            CountdownNumber.width(of: caption, font: captionFont, tracking: tracking),
+            numberWidth,
+            accuracy: 0.01
+        )
+    }
+
+    func testCaptionTrackingRemainsReadableForShortCountdowns() {
+        let numberFont = CountdownNumber.uiFont(size: 18)
+        let captionFont = CountdownNumber.uiFont(size: 9)
+        let numberWidth = CountdownNumber.width(of: "999", font: numberFont)
+        let caption = "Inspiration is Fleeting"
+        let tracking = CountdownNumber.tracking(for: caption, font: captionFont, targetWidth: numberWidth)
+
+        XCTAssertEqual(tracking, -1.2, accuracy: 0.001)
+        XCTAssertGreaterThan(
+            CountdownNumber.width(of: caption, font: captionFont, tracking: tracking),
+            numberWidth
+        )
+    }
+
     func testLayoutEntriesCoverEveryDigitBoundaryAndExpiry() {
         let end = now.addingTimeInterval(1_050)
         let dates = Countdown.layoutDates(until: end, after: now)

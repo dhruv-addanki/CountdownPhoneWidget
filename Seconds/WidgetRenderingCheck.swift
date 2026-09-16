@@ -24,7 +24,7 @@ struct WidgetRenderingCheck: View {
                     }
                 }
             }
-            Text("Same number view. Layout updates only at digit boundaries.")
+            Text("Live widget layout. Caption width follows the number.")
                 .font(.footnote).foregroundStyle(.secondary)
             CountdownNumber(deadline: start.addingTimeInterval(31_536_000), layoutDate: start)
                 .environment(\.isLuminanceReduced, true)
