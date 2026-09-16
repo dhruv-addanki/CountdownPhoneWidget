@@ -1,4 +1,3 @@
-import SwiftUI
 import XCTest
 @testable import Seconds
 
@@ -19,12 +18,18 @@ final class CountdownTests: XCTestCase {
         XCTAssertEqual(Countdown.seconds(until: now.addingTimeInterval(-100), at: now), 0)
     }
 
-    func testNativeLiveFormatIsUnsignedAndGrouped() {
-        let deadline = now.addingTimeInterval(31_536_000)
-        let formatted = String(CountdownNumber.liveSecondsFormat(to: deadline).format(now).characters)
+    func testLiveFormatIsUnsignedAndGrouped() {
+        for seconds in [31_536_000, 10_000_000, 9_999_999, 1_000, 999, 10, 9, 1, 0] {
+            XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(-seconds)), Countdown.number(seconds))
+        }
+    }
 
-        XCTAssertEqual(formatted, "31,536,000 seconds")
-        XCTAssertFalse(formatted.contains("-"))
+    func testLiveFormatIsCodableForWidgetKit() throws {
+        let encoded = try JSONEncoder().encode(Countdown.liveSecondsFormat)
+        let decoded = try JSONDecoder().decode(LiveSecondsFormat.self, from: encoded)
+
+        XCTAssertEqual(decoded, Countdown.liveSecondsFormat)
+        XCTAssertEqual(decoded.format(.seconds(-31_536_000)), "31,536,000")
     }
 
     func testCaptionLayoutMatchesCountdownWidth() {
