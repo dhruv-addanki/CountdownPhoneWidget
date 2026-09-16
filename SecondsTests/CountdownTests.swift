@@ -18,26 +18,23 @@ final class CountdownTests: XCTestCase {
         XCTAssertEqual(Countdown.seconds(until: now.addingTimeInterval(-100), at: now), 0)
     }
 
-    func testBuiltInFormatHasConstantSuffixAndGrouping() {
+    func testLiveFormatHasGroupingWithoutAHiddenSignOrUnit() {
         for seconds in [31_536_000, 10_000_000, 9_999_999, 1_000, 999, 10, 9, 1, 0] {
-            let format = Countdown.liveFormat(digits: String(seconds).count)
-            let sign = seconds == 0 ? "" : "-"
-            XCTAssertEqual(format.format(.seconds(-seconds)), "\(sign)\(Countdown.number(seconds))s")
+            XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(-seconds)), Countdown.number(seconds))
         }
     }
 
-    func testLateLayoutKeepsTheNumericViewportPadded() {
-        let format = Countdown.liveFormat(digits: 8)
-        XCTAssertEqual(format.format(.seconds(-9_999_999)), "-09,999,999s")
-        XCTAssertEqual(format.format(.seconds(-1)), "-00,000,001s")
-        XCTAssertEqual(format.format(.zero), "00,000,000s")
+    func testLiveFormatClampsExpiredDurationsToZero() {
+        XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(-0.9)), "0")
+        XCTAssertEqual(Countdown.liveSecondsFormat.format(.zero), "0")
+        XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(1)), "0")
     }
 
-    func testNativeFormatterAndAppAgreeOnFractionalSeconds() {
+    func testLiveFormatAndAppAgreeOnFractionalSeconds() {
         for remaining in [1.9, 1.1, 1.0, 0.9, 0.1] {
             let expected = Countdown.seconds(until: now.addingTimeInterval(remaining), at: now)
-            let formatted = Countdown.liveFormat(digits: 1).format(.seconds(-remaining))
-            XCTAssertEqual(formatted.replacingOccurrences(of: "-", with: ""), "\(expected)s")
+            let formatted = Countdown.liveSecondsFormat.format(.seconds(-remaining))
+            XCTAssertEqual(formatted, "\(expected)")
         }
     }
 

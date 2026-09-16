@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 
 /// Keeps Apple's live duration text intact so the system owns the ticking.
-/// Future offsets format as `-31,536,000s`; crop the sign and unit to expose
-/// just the number. The active caption is fitted to that measured width.
+/// The formatter emits only the positive seconds number. The active caption
+/// is fitted to that measured width.
 struct CountdownNumber: View {
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
@@ -30,10 +30,6 @@ struct CountdownNumber: View {
                 preferredSize: fontSize * Self.captionSizeRatio,
                 targetWidth: numberWidth
             )
-            let suffixWidth = Self.width(of: "s", font: font)
-            let signWidth = Self.width(of: "-", font: font)
-            let digits = String(Countdown.seconds(until: deadline, at: layoutDate)).count
-            let format = Countdown.liveFormat(digits: digits)
             let scale = fontSize / maximumFontSize
 
             VStack(spacing: 0) {
@@ -45,11 +41,8 @@ struct CountdownNumber: View {
                         // Never present that coarser value as a seconds count.
                         Text("—")
                     } else {
-                        Text(.durationOffset(to: deadline), format: format)
+                        Text(.durationOffset(to: deadline), format: Countdown.liveSecondsFormat)
                             .lineLimit(1)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: signWidth + numberWidth + suffixWidth, alignment: .trailing)
-                            .offset(x: -signWidth)
                             .frame(width: numberWidth, alignment: .leading)
                             .clipped()
                     }

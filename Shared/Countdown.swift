@@ -17,14 +17,7 @@ enum Countdown {
         return calendar.date(from: DateComponents(year: 2027, month: 9, day: 15))!
     }()
 
-    static func liveFormat(digits: Int) -> Duration.UnitsFormatStyle {
-        Duration.UnitsFormatStyle(
-            allowedUnits: [.seconds],
-            width: .narrow,
-            valueLength: digits,
-            fractionalPart: .hide(rounded: .towardZero)
-        ).locale(locale)
-    }
+    static let liveSecondsFormat = LiveSecondsFormat(locale: locale)
 
     static func seconds(until deadline: Date, at now: Date = .now) -> Int {
         max(0, Int(deadline.timeIntervalSince(now).rounded(.down)))
@@ -81,5 +74,25 @@ enum Countdown {
             midnight = calendar.date(byAdding: .day, value: 1, to: midnight)!
         }
         return dates.sorted()
+    }
+}
+
+/// A system-driven, per-second formatter for `TimeDataSource.durationOffset`.
+/// Future deadlines arrive as negative durations; format their magnitude as a
+/// grouped number so no sign or unit ever needs to be clipped from the view.
+struct LiveSecondsFormat: DiscreteFormatStyle {
+    let locale: Locale
+
+    func format(_ duration: Duration) -> String {
+        let seconds = max(0, -duration.components.seconds)
+        return seconds.formatted(.number.locale(locale).grouping(.automatic))
+    }
+
+    func discreteInput(before input: Duration) -> Duration? {
+        input - .seconds(1)
+    }
+
+    func discreteInput(after input: Duration) -> Duration? {
+        input + .seconds(1)
     }
 }
