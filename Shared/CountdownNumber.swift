@@ -9,23 +9,23 @@ struct CountdownNumber: View {
 
     let deadline: Date
     let layoutDate: Date
-    var maximumFontSize: CGFloat = 18
+    var maximumFontSize: CGFloat = 20
 
     private static let caption = "Inspiration is Fleeting"
-    private static let captionSizeRatio: CGFloat = 0.5
+    private static let captionSizeRatio: CGFloat = 0.55
     private static let dotDiameter: CGFloat = 2
-    private static let separatorGap: CGFloat = 6
+    private static let separatorGap: CGFloat = 4
     private static let minimumCaptionTracking: CGFloat = -1.2
 
     var body: some View {
         GeometryReader { geometry in
             let value = Countdown.number(Countdown.seconds(until: deadline, at: layoutDate))
-            let referenceFont = Self.uiFont(size: maximumFontSize)
+            let referenceFont = Self.numberFont(size: maximumFontSize)
             let referenceWidth = Self.width(of: value, font: referenceFont)
             let fontSize = maximumFontSize * min(1, geometry.size.width / max(1, referenceWidth))
-            let font = Self.uiFont(size: fontSize)
+            let font = Self.numberFont(size: fontSize)
             let numberWidth = Self.width(of: value, font: font)
-            let captionFont = Self.uiFont(size: fontSize * Self.captionSizeRatio)
+            let captionFont = Self.captionFont(size: fontSize * Self.captionSizeRatio)
             let captionTracking = Self.tracking(
                 for: Self.caption,
                 font: captionFont,
@@ -78,7 +78,7 @@ struct CountdownNumber: View {
                 Text(Self.caption)
                     .font(Font(captionFont))
                     .tracking(captionTracking)
-                    .foregroundStyle(.primary.opacity(0.72))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                     .fixedSize()
                     .frame(width: captionWidth, height: captionFont.lineHeight)
@@ -98,8 +98,12 @@ struct CountdownNumber: View {
         return Text(.currentDate, format: .offset(to: deadline, allowedFields: [.second], maxFieldCount: 1, sign: .never))
     }
 
-    static func uiFont(size: CGFloat) -> UIFont {
+    static func numberFont(size: CGFloat) -> UIFont {
         UIFont.monospacedSystemFont(ofSize: size, weight: .medium)
+    }
+
+    static func captionFont(size: CGFloat) -> UIFont {
+        UIFont.systemFont(ofSize: size, weight: .semibold, width: .condensed)
     }
 
     static func width(of text: String, font: UIFont, tracking: CGFloat = 0) -> CGFloat {

@@ -42,8 +42,8 @@ final class CountdownTests: XCTestCase {
     }
 
     func testCaptionTrackingMatchesCountdownWidth() {
-        let numberFont = CountdownNumber.uiFont(size: 18)
-        let captionFont = CountdownNumber.uiFont(size: 9)
+        let numberFont = CountdownNumber.numberFont(size: 20)
+        let captionFont = CountdownNumber.captionFont(size: 11)
         let numberWidth = CountdownNumber.width(of: "31,410,180", font: numberFont)
         let caption = "Inspiration is Fleeting"
         let tracking = CountdownNumber.tracking(for: caption, font: captionFont, targetWidth: numberWidth)
@@ -56,8 +56,8 @@ final class CountdownTests: XCTestCase {
     }
 
     func testCaptionTrackingRemainsReadableForShortCountdowns() {
-        let numberFont = CountdownNumber.uiFont(size: 18)
-        let captionFont = CountdownNumber.uiFont(size: 9)
+        let numberFont = CountdownNumber.numberFont(size: 20)
+        let captionFont = CountdownNumber.captionFont(size: 11)
         let numberWidth = CountdownNumber.width(of: "999", font: numberFont)
         let caption = "Inspiration is Fleeting"
         let tracking = CountdownNumber.tracking(for: caption, font: captionFont, targetWidth: numberWidth)
