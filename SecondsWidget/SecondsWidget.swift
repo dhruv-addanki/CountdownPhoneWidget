@@ -17,7 +17,7 @@ struct CountdownProvider: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<CountdownEntry>) -> Void) {
         let deadline = CountdownStore().deadline
-        let entries = Countdown.layoutDates(until: deadline, after: .now).map {
+        let entries = Countdown.timelineDates(until: deadline, after: .now).map {
             CountdownEntry(date: $0, deadline: deadline)
         }
         completion(Timeline(entries: entries, policy: .never))

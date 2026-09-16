@@ -24,6 +24,28 @@ struct WidgetRenderingCheck: View {
                     }
                 }
             }
+            let tomorrow = Calendar.autoupdatingCurrent.date(byAdding: .day, value: 1, to: start)!
+            Text("Quote rotation").font(.headline)
+            HStack(spacing: 20) {
+                ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
+                    VStack(spacing: 8) {
+                        CountdownNumber(
+                            deadline: start.addingTimeInterval(31_536_000),
+                            layoutDate: start
+                        )
+                        .frame(width: 160, height: 72)
+                        .background(scheme == .dark ? Color.black : Color.white)
+                        .environment(\.colorScheme, scheme)
+                        CountdownNumber(
+                            deadline: tomorrow.addingTimeInterval(31_536_000),
+                            layoutDate: tomorrow
+                        )
+                        .frame(width: 160, height: 72)
+                        .background(scheme == .dark ? Color.black : Color.white)
+                        .environment(\.colorScheme, scheme)
+                    }
+                }
+            }
             Text("Live widget layout. Caption width follows the number.")
                 .font(.footnote).foregroundStyle(.secondary)
             CountdownNumber(deadline: start.addingTimeInterval(31_536_000), layoutDate: start)

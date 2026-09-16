@@ -41,32 +41,53 @@ final class CountdownTests: XCTestCase {
         }
     }
 
-    func testCaptionTrackingMatchesCountdownWidth() {
+    func testCaptionLayoutMatchesCountdownWidth() {
         let numberFont = CountdownNumber.numberFont(size: 20)
-        let captionFont = CountdownNumber.captionFont(size: 11)
         let numberWidth = CountdownNumber.width(of: "31,410,180", font: numberFont)
-        let caption = "Inspiration is Fleeting"
-        let tracking = CountdownNumber.tracking(for: caption, font: captionFont, targetWidth: numberWidth)
-
-        XCTAssertEqual(
-            CountdownNumber.width(of: caption, font: captionFont, tracking: tracking),
-            numberWidth,
-            accuracy: 0.01
+        let layout = CountdownNumber.captionLayout(
+            for: Countdown.inspirationQuote,
+            preferredSize: 11,
+            targetWidth: numberWidth
         )
+
+        XCTAssertEqual(layout.width, numberWidth, accuracy: 0.01)
     }
 
-    func testCaptionTrackingRemainsReadableForShortCountdowns() {
+    func testCaptionLayoutFitsQuoteWithoutShrinkingNumber() {
         let numberFont = CountdownNumber.numberFont(size: 20)
-        let captionFont = CountdownNumber.captionFont(size: 11)
         let numberWidth = CountdownNumber.width(of: "999", font: numberFont)
-        let caption = "Inspiration is Fleeting"
-        let tracking = CountdownNumber.tracking(for: caption, font: captionFont, targetWidth: numberWidth)
-
-        XCTAssertEqual(tracking, -1.2, accuracy: 0.001)
-        XCTAssertGreaterThan(
-            CountdownNumber.width(of: caption, font: captionFont, tracking: tracking),
-            numberWidth
+        let layout = CountdownNumber.captionLayout(
+            for: Countdown.timeQuote,
+            preferredSize: 11,
+            targetWidth: numberWidth
         )
+
+        XCTAssertLessThanOrEqual(layout.width, numberWidth + 0.01)
+        XCTAssertLessThanOrEqual(layout.font.pointSize, 11)
+    }
+
+    func testQuotesAlternateAtNewYorkMidnight() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let beforeMidnight = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 23, minute: 59, second: 59))!
+        let firstSwitch = calendar.date(from: DateComponents(year: 2026, month: 9, day: 17))!
+        let secondSwitch = calendar.date(from: DateComponents(year: 2026, month: 9, day: 18))!
+
+        XCTAssertEqual(Countdown.quote(at: beforeMidnight, using: calendar), Countdown.inspirationQuote)
+        XCTAssertEqual(Countdown.quote(at: firstSwitch, using: calendar), Countdown.timeQuote)
+        XCTAssertEqual(Countdown.quote(at: secondSwitch, using: calendar), Countdown.inspirationQuote)
+    }
+
+    func testTimelineIncludesEachMidnightBeforeDeadline() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 16))!
+        let deadline = calendar.date(from: DateComponents(year: 2026, month: 9, day: 19, hour: 1))!
+        let dates = Countdown.timelineDates(until: deadline, after: now, using: calendar)
+
+        XCTAssertTrue(dates.contains(calendar.date(from: DateComponents(year: 2026, month: 9, day: 17))!))
+        XCTAssertTrue(dates.contains(calendar.date(from: DateComponents(year: 2026, month: 9, day: 18))!))
+        XCTAssertTrue(dates.contains(calendar.date(from: DateComponents(year: 2026, month: 9, day: 19))!))
     }
 
     func testLayoutEntriesCoverEveryDigitBoundaryAndExpiry() {

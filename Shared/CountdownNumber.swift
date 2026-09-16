@@ -3,7 +3,7 @@ import UIKit
 
 /// Keeps Apple's live duration text intact so the system owns the ticking.
 /// Future offsets format as `-31,536,000s`; crop the sign and unit to expose
-/// just the number. The caption is kerned to the same measured width.
+/// just the number. The active caption is fitted to that measured width.
 struct CountdownNumber: View {
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
@@ -11,7 +11,6 @@ struct CountdownNumber: View {
     let layoutDate: Date
     var maximumFontSize: CGFloat = 20
 
-    private static let caption = "Inspiration is Fleeting"
     private static let captionSizeRatio: CGFloat = 0.55
     private static let dotDiameter: CGFloat = 2
     private static let separatorGap: CGFloat = 4
@@ -20,21 +19,16 @@ struct CountdownNumber: View {
     var body: some View {
         GeometryReader { geometry in
             let value = Countdown.number(Countdown.seconds(until: deadline, at: layoutDate))
+            let caption = Countdown.quote(at: layoutDate)
             let referenceFont = Self.numberFont(size: maximumFontSize)
             let referenceWidth = Self.width(of: value, font: referenceFont)
             let fontSize = maximumFontSize * min(1, geometry.size.width / max(1, referenceWidth))
             let font = Self.numberFont(size: fontSize)
             let numberWidth = Self.width(of: value, font: font)
-            let captionFont = Self.captionFont(size: fontSize * Self.captionSizeRatio)
-            let captionTracking = Self.tracking(
-                for: Self.caption,
-                font: captionFont,
+            let captionLayout = Self.captionLayout(
+                for: caption,
+                preferredSize: fontSize * Self.captionSizeRatio,
                 targetWidth: numberWidth
-            )
-            let captionWidth = Self.width(
-                of: Self.caption,
-                font: captionFont,
-                tracking: captionTracking
             )
             let suffixWidth = Self.width(of: "s", font: font)
             let signWidth = Self.width(of: "-", font: font)
@@ -75,13 +69,13 @@ struct CountdownNumber: View {
 
                 Color.clear.frame(height: Self.separatorGap * scale)
 
-                Text(Self.caption)
-                    .font(Font(captionFont))
-                    .tracking(captionTracking)
+                Text(caption)
+                    .font(Font(captionLayout.font))
+                    .tracking(captionLayout.tracking)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .fixedSize()
-                    .frame(width: captionWidth, height: captionFont.lineHeight)
+                    .frame(width: captionLayout.width, height: captionLayout.font.lineHeight)
                     .clipped()
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
@@ -104,6 +98,30 @@ struct CountdownNumber: View {
 
     static func captionFont(size: CGFloat) -> UIFont {
         UIFont.systemFont(ofSize: size, weight: .semibold, width: .condensed)
+    }
+
+    struct CaptionLayout {
+        let font: UIFont
+        let tracking: CGFloat
+        let width: CGFloat
+    }
+
+    /// Keeps the number's width authoritative. Tracking handles normal-size
+    /// captions; font size is reduced only when the active phrase still cannot
+    /// fit after the readable tracking limit is reached.
+    static func captionLayout(for text: String, preferredSize: CGFloat, targetWidth: CGFloat) -> CaptionLayout {
+        var font = captionFont(size: preferredSize)
+        var captionTracking = tracking(for: text, font: font, targetWidth: targetWidth)
+        var captionWidth = width(of: text, font: font, tracking: captionTracking)
+
+        for _ in 0..<3 where captionWidth > targetWidth && targetWidth > 0 {
+            let scale = targetWidth / captionWidth
+            font = captionFont(size: max(1, font.pointSize * scale))
+            captionTracking = tracking(for: text, font: font, targetWidth: targetWidth)
+            captionWidth = width(of: text, font: font, tracking: captionTracking)
+        }
+
+        return CaptionLayout(font: font, tracking: captionTracking, width: captionWidth)
     }
 
     static func width(of text: String, font: UIFont, tracking: CGFloat = 0) -> CGFloat {
