@@ -15,7 +15,7 @@ The project is included and ready to open. No packages, server, or project gener
 
 ## Behavior
 
-- The widget displays total whole seconds in compact terminal typography, with a centered dot and a quote underneath. “Inspiration is Fleeting” and “Our time is all we have” alternate at local midnight. The caption is fitted to the countdown's measured width so both lines share the same center and outer edges. It has no visible unit or background.
+- The widget displays total whole seconds in compact terminal typography, with a centered dot and a quote underneath. “Inspiration is Fleeting” and “Our Time is All We Have” alternate at local midnight. The caption is fitted to the countdown's measured width so both lines share the same center and outer edges. It has no visible unit or background.
 - It calculates from the actual deadline, so the initial value is the actual remaining time, not a fresh 31,536,000-second interval.
 - Seconds are truncated to whole seconds; less than one second remaining displays `0`. A timeline entry just after expiration switches the widget to a permanent `0`.
 - The app's date picker uses the phone's current time zone and minute precision. Saved dates remain fixed instants when you travel or daylight saving time changes.

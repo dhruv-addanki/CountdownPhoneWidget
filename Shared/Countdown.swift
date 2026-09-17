@@ -4,7 +4,7 @@ enum Countdown {
     static let widgetKind = "SecondsCountdown"
     static let locale = Locale(identifier: "en_US")
     static let inspirationQuote = "Inspiration is Fleeting"
-    static let timeQuote = "Our time is all we have"
+    static let timeQuote = "Our Time is All We Have"
 
     // Keep today's existing phrase as the first side of the alternating cycle.
     // The calendar used by the caller determines what local midnight means.
