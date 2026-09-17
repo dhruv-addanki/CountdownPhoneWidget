@@ -20,7 +20,7 @@ struct CountdownProvider: TimelineProvider {
         let entries = Countdown.timelineDates(until: deadline, after: .now).map {
             CountdownEntry(date: $0, deadline: deadline)
         }
-        completion(Timeline(entries: entries, policy: .never))
+        completion(Timeline(entries: entries, policy: .atEnd))
     }
 }
 

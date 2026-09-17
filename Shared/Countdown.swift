@@ -17,7 +17,16 @@ enum Countdown {
         return calendar.date(from: DateComponents(year: 2027, month: 9, day: 15))!
     }()
 
-    static let liveSecondsFormat = LiveSecondsFormat(locale: locale)
+    // Use a Foundation formatter that the system widget renderer can decode.
+    // Fixed digit padding keeps the crop stable if a layout entry arrives late.
+    static func liveFormat(digits: Int) -> Duration.UnitsFormatStyle {
+        Duration.UnitsFormatStyle(
+            allowedUnits: [.seconds],
+            width: .narrow,
+            valueLength: digits,
+            fractionalPart: .hide(rounded: .towardZero)
+        ).locale(locale)
+    }
 
     static func seconds(until deadline: Date, at now: Date = .now) -> Int {
         max(0, Int(deadline.timeIntervalSince(now).rounded(.down)))
@@ -50,54 +59,26 @@ enum Countdown {
             dates.append(deadline.addingTimeInterval(-threshold + 0.01))
             threshold *= 10
         }
-        if deadline > now { dates.append(deadline) }
+        // Step just past expiry so date precision in scheduled view updates
+        // cannot leave the live offset counting upward after zero.
+        if deadline > now { dates.append(deadline.addingTimeInterval(0.01)) }
         return dates.sorted()
     }
 
-    /// Combines digit-width boundaries with local midnights so the quote can
-    /// change without interrupting the system-owned live seconds text.
+    /// Archive only three days at a time. Include each local midnight even after
+    /// expiry so quotes keep alternating while the number stays at zero.
     static func timelineDates(
         until deadline: Date,
         after now: Date,
         using calendar: Calendar = .autoupdatingCurrent
     ) -> [Date] {
-        var dates = Set(layoutDates(until: deadline, after: now))
-        guard deadline > now else { return dates.sorted() }
-
-        var midnight = calendar.date(
-            byAdding: .day,
-            value: 1,
-            to: calendar.startOfDay(for: now)
-        )!
-        while midnight < deadline {
-            dates.insert(midnight)
-            midnight = calendar.date(byAdding: .day, value: 1, to: midnight)!
+        let startOfDay = calendar.startOfDay(for: now)
+        let midnights = (1...3).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: startOfDay)
         }
+        guard let horizon = midnights.last else { return [now] }
+        var dates = Set(layoutDates(until: deadline, after: now).filter { $0 <= horizon })
+        dates.formUnion(midnights)
         return dates.sorted()
-    }
-}
-
-/// A system-driven, per-second formatter for `TimeDataSource.durationOffset`.
-/// WidgetKit archives this formatter with the live text, so its stored state is
-/// deliberately Codable and Hashable. Future deadlines arrive as negative
-/// durations; expose only their grouped magnitude.
-struct LiveSecondsFormat: DiscreteFormatStyle, Codable, Hashable, Sendable {
-    private let localeIdentifier: String
-
-    init(locale: Locale) {
-        localeIdentifier = locale.identifier
-    }
-
-    func format(_ duration: Duration) -> String {
-        let seconds = max(0, -duration.components.seconds)
-        return seconds.formatted(.number.locale(Locale(identifier: localeIdentifier)).grouping(.automatic))
-    }
-
-    func discreteInput(before input: Duration) -> Duration? {
-        input - .seconds(1)
-    }
-
-    func discreteInput(after input: Duration) -> Duration? {
-        input + .seconds(1)
     }
 }

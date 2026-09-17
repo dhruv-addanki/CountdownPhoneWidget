@@ -14,7 +14,9 @@ struct WidgetRenderingCheck: View {
                 let deadline = start.addingTimeInterval(interval)
                 HStack(spacing: 20) {
                     ForEach([ColorScheme.light, .dark], id: \.self) { scheme in
-                        TimelineView(.explicit(Countdown.layoutDates(until: deadline, after: start))) { context in
+                        // Keep a sentinel after the final layout date: TimelineView's
+                        // explicit schedule may otherwise omit its terminal update.
+                        TimelineView(.explicit(Countdown.layoutDates(until: deadline, after: start) + [deadline.addingTimeInterval(1)])) { context in
                             CountdownNumber(deadline: deadline, layoutDate: context.date)
                         }
                         .frame(width: 160, height: 72)

@@ -18,18 +18,24 @@ final class CountdownTests: XCTestCase {
         XCTAssertEqual(Countdown.seconds(until: now.addingTimeInterval(-100), at: now), 0)
     }
 
-    func testLiveFormatIsUnsignedAndGrouped() {
+    func testNativeFormatHasStableSuffixGroupingAndPadding() {
         for seconds in [31_536_000, 10_000_000, 9_999_999, 1_000, 999, 10, 9, 1, 0] {
-            XCTAssertEqual(Countdown.liveSecondsFormat.format(.seconds(-seconds)), Countdown.number(seconds))
+            let format = Countdown.liveFormat(digits: String(seconds).count)
+            let sign = seconds == 0 ? "" : "-"
+            XCTAssertEqual(format.format(.seconds(-seconds)), "\(sign)\(Countdown.number(seconds))s")
         }
+        let format = Countdown.liveFormat(digits: 8)
+        XCTAssertEqual(format.format(.seconds(-9_999_999)), "-09,999,999s")
+        XCTAssertEqual(format.format(.seconds(-1)), "-00,000,001s")
+        XCTAssertEqual(format.format(.zero), "00,000,000s")
     }
 
-    func testLiveFormatIsCodableForWidgetKit() throws {
-        let encoded = try JSONEncoder().encode(Countdown.liveSecondsFormat)
-        let decoded = try JSONDecoder().decode(LiveSecondsFormat.self, from: encoded)
-
-        XCTAssertEqual(decoded, Countdown.liveSecondsFormat)
-        XCTAssertEqual(decoded.format(.seconds(-31_536_000)), "31,536,000")
+    func testNativeFormatTruncatesFractionalSeconds() {
+        for remaining in [1.9, 1.1, 1.0, 0.9, 0.1] {
+            let expected = Countdown.seconds(until: now.addingTimeInterval(remaining), at: now)
+            let formatted = Countdown.liveFormat(digits: 1).format(.seconds(-remaining))
+            XCTAssertEqual(formatted.replacingOccurrences(of: "-", with: ""), "\(expected)s")
+        }
     }
 
     func testCaptionLayoutMatchesCountdownWidth() {
@@ -81,12 +87,48 @@ final class CountdownTests: XCTestCase {
         XCTAssertTrue(dates.contains(calendar.date(from: DateComponents(year: 2026, month: 9, day: 19))!))
     }
 
+    func testLongDeadlineHasBoundedTimelineAndExpiredCountdownStillRotates() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let start = calendar.date(from: DateComponents(year: 2026, month: 9, day: 16, hour: 20))!
+        let horizon = calendar.date(from: DateComponents(year: 2026, month: 9, day: 19))!
+        for deadline in [Countdown.defaultDeadline, start.addingTimeInterval(-1)] {
+            let dates = Countdown.timelineDates(until: deadline, after: start, using: calendar)
+            XCTAssertEqual(dates.count, 4)
+            XCTAssertEqual(dates.first, start)
+            XCTAssertEqual(dates.last, horizon)
+            XCTAssertEqual(dates, dates.sorted())
+        }
+    }
+
+    func testRollingTimelineIncludesExpiryAndDigitBoundaries() {
+        let end = now.addingTimeInterval(1_050)
+        let dates = Countdown.timelineDates(until: end, after: now)
+        for boundary in Countdown.layoutDates(until: end, after: now) {
+            XCTAssertTrue(dates.contains(boundary))
+        }
+        XCTAssertEqual(Set(dates).count, dates.count)
+    }
+
+    func testMidnightsFollowLocalCalendarAcrossDaylightSaving() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/New_York")!
+        let start = calendar.date(from: DateComponents(year: 2026, month: 10, day: 31, hour: 12))!
+        let dates = Countdown.timelineDates(until: Countdown.defaultDeadline, after: start, using: calendar)
+        XCTAssertEqual(dates.count, 4)
+        XCTAssertEqual(dates[2].timeIntervalSince(dates[1]), 25 * 3600)
+        for date in dates.dropFirst() {
+            XCTAssertEqual(calendar.component(.hour, from: date), 0)
+        }
+        XCTAssertNotEqual(Countdown.quote(at: dates[1], using: calendar), Countdown.quote(at: dates[2], using: calendar))
+    }
+
     func testLayoutEntriesCoverEveryDigitBoundaryAndExpiry() {
         let end = now.addingTimeInterval(1_050)
         let dates = Countdown.layoutDates(until: end, after: now)
         XCTAssertEqual(dates.count, 5)
         XCTAssertEqual(dates.first, now)
-        XCTAssertEqual(dates.last, end)
+        XCTAssertEqual(dates.last, end.addingTimeInterval(0.01))
         XCTAssertEqual(dates, dates.sorted())
         XCTAssertEqual(dates.map { Countdown.seconds(until: end, at: $0) }, [1_050, 999, 99, 9, 0])
         XCTAssertEqual(Countdown.layoutDates(until: now.addingTimeInterval(-1), after: now), [now])

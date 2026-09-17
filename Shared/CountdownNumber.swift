@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 
 /// Keeps Apple's live duration data source intact so the system owns ticking.
-/// The Codable formatter emits only the positive seconds number; the active
-/// caption fits that measured width.
+/// An explicitly sized, trailing-aligned viewport hides the native sign and
+/// suffix. No intrinsic measurement of live Text is required in WidgetKit.
 struct CountdownNumber: View {
     @Environment(\.isLuminanceReduced) private var isLuminanceReduced
 
@@ -30,6 +30,9 @@ struct CountdownNumber: View {
                 preferredSize: fontSize * Self.captionSizeRatio,
                 targetWidth: numberWidth
             )
+            let digits = String(Countdown.seconds(until: deadline, at: layoutDate)).count
+            let suffixWidth = Self.width(of: "s", font: font)
+            let signWidth = Self.width(of: "-", font: font)
             let scale = fontSize / maximumFontSize
 
             VStack(spacing: 0) {
@@ -41,9 +44,18 @@ struct CountdownNumber: View {
                         // Never present that coarser value as a seconds count.
                         Text("—")
                     } else {
-                        Text(.durationOffset(to: deadline), format: Countdown.liveSecondsFormat)
-                            .fixedSize(horizontal: true, vertical: false)
-                            .frame(width: numberWidth, alignment: .leading)
+                        // Live Text has no reliable intrinsic width in an archived
+                        // widget. Give it a full frame, align its glyphs explicitly,
+                        // and crop using a separate, fixed numeric viewport.
+                        Color.clear
+                            .frame(width: numberWidth, height: font.lineHeight)
+                            .overlay(alignment: .trailing) {
+                                Text(.durationOffset(to: deadline), format: Countdown.liveFormat(digits: digits))
+                                    .lineLimit(1)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: signWidth + numberWidth + suffixWidth, height: font.lineHeight, alignment: .trailing)
+                                    .offset(x: suffixWidth)
+                            }
                             .clipped()
                     }
                 }
